@@ -55,3 +55,19 @@ EXPOSE 80
    ```
 
 We can see the content from the `index.html` file served by the Nginx container.
+
+### **Step 4: Push the docker image into DockerHub
+
+```bash
+# Step 1: Build the Docker image
+docker build -t my-nginx-server .
+
+# Step 2: Tag the image for Docker Hub
+docker tag my-nginx-server hasanhabib16011998/dipti_kubernetes_final:latest
+
+# Step 3: Log in to Docker Hub
+docker login
+
+# Step 4: Push the image to Docker Hub
+docker push hasanhabib16011998/dipti_kubernetes_final:latest
+```
