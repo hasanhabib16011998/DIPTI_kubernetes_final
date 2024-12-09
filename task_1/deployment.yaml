@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dipti-kubernetes-final
+  labels:
+    app: dipti-kubernetes-final
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dipti-kubernetes-final
+  template:
+    metadata:
+      labels:
+        app: dipti-kubernetes-final
+    spec:
+      containers:
+      - name: dipti-container
+        image: hasanhabib16011998/dipti_kubernetes_final:latest
+        ports:
+        - containerPort: 80 # Change this if your app uses a different port
