@@ -223,3 +223,71 @@ Apply the YAML using `kubectl apply -f`:
 ```bash
 kubectl apply -f demo-claim.yaml
 ```
+
+### **Step 5: Deploy Two Containers Sharing the NFS Volume**
+
+#### Deployment YAML
+Add the following deployment file to deploy two containers sharing the same NFS volume:
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-2
+  labels:
+    app: dual-alpine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dual-alpine
+  template:
+    metadata:
+      labels:
+        app: dual-alpine
+    spec:
+      containers:
+      - name: container-1
+        image: alpine:latest
+        command: ["sh", "-c", "i=1; while true; do echo \"Container-1 $(date)\" > /mount/log$i.txt; i=$((i+1)); sleep 60; done"]
+        volumeMounts:
+        - name: shared-nfs-volume
+          mountPath: /mount
+      - name: container-2
+        image: alpine:latest
+        command: ["sh", "-c", "i=1; while true; do echo \"Container-2 $(date)\" > /mount/file$i.txt; i=$((i+1)); sleep 60; done"]
+        volumeMounts:
+        - name: shared-nfs-volume
+          mountPath: /mount
+      volumes:
+      - name: shared-nfs-volume
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+  labels:
+    app: dual-alpine
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-client
+```
+
+#### Breakdown of What Happens
+1. **Deployment Name**: The deployment is named `task-2` and deploys a single pod with two containers.
+2. **Container-1**: Writes logs (`log1.txt`, `log2.txt`, etc.) to the `/mount` directory every minute. The logs include the current date and time.
+3. **Container-2**: Writes files (`file1.txt`, `file2.txt`, etc.) to the same `/mount` directory every minute. The files include the current date and time.
+4. **Shared Volume**: Both containers share the same NFS-backed volume mounted at `/mount`, allowing them to write files to the same directory.
+5. **NFS PVC**: The `nfs-pvc` PersistentVolumeClaim is used to connect the deployment to the NFS server, which enables ReadWriteMany (RWX) access across containers.
+
+Apply the deployment using:
+```bash
+kubectl apply -f deployment.yaml
+```
