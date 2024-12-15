@@ -19,3 +19,4 @@ spec:
         image: hasanhabib16011998/dipti_kubernetes_final:latest
         ports:
         - containerPort: 80 # Change this if your app uses a different port
+

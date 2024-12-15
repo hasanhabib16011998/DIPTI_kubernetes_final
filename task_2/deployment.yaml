@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-2
+  labels:
+    app: dual-alpine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dual-alpine
+  template:
+    metadata:
+      labels:
+        app: dual-alpine
+    spec:
+      containers:
+      - name: container-1
+        image: alpine:latest
+        command: ["sh", "-c", "i=1; while true; do echo \"Container-1 $(date)\" > /mount/log$i.txt; i=$((i+1)); sleep 60; done"]
+        volumeMounts:
+        - name: shared-nfs-volume
+          mountPath: /mount
+      - name: container-2
+        image: alpine:latest
+        command: ["sh", "-c", "i=1; while true; do echo \"Container-2 $(date)\" > /mount/file$i.txt; i=$((i+1)); sleep 60; done"]
+        volumeMounts:
+        - name: shared-nfs-volume
+          mountPath: /mount
+      volumes:
+      - name: shared-nfs-volume
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+  labels:
+    app: dual-alpine
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-client
+
