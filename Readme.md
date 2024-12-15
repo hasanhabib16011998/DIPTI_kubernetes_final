@@ -139,44 +139,77 @@ Access the application using the node's IP and the NodePort:
 ---
 
 
-Step1: Prepare the NFS Server
-First lets install NFS server on the host machine
+# Setting up NFS Server and Kubernetes NFS Provisioner
 
+### **Step 1: Prepare the NFS Server**
+
+#### Install NFS Server
+On the host machine, install the NFS server:
+```bash
 sudo apt update
 sudo apt install nfs-kernel-server -y
+```
 
-Create a directory where our NFS server will serve the files.
-
+#### Create a Directory for NFS
+Create a directory where the NFS server will serve the files:
+```bash
 sudo mkdir -p /var/k8-nfs/data
 sudo chown -R nobody:nogroup /var/k8-nfs/data
 sudo chmod 2770 /var/k8-nfs/data
+```
 
-Add NFS export options
-
-sudo vi /etc/exports	
+#### Configure NFS Exports
+Add the export options to the NFS configuration:
+```bash
+sudo vi /etc/exports
+```
+Add the following line:
+```
 /var/k8-nfs/data 192.168.0.0/24(rw,sync,no_subtree_check,no_root_squash,no_all_squash)
+```
 
-Makes the specified directories available for NFS clients to access and restart the NFS Service
-
+#### Apply NFS Export Configuration
+Make the specified directories available for NFS clients to access and restart the NFS service:
+```bash
 sudo exportfs -avr
 sudo systemctl restart nfs-kernel-server
 sudo systemctl status nfs-kernel-server
-On the worker and master nodes, install nfs-common package using following 
+```
+
+### **Step 2: Install NFS Common on Worker and Master Nodes**
+Install the `nfs-common` package on all worker and master nodes:
+```bash
 sudo apt install nfs-common -y
+```
 
-Install Helm
-Helm is the best way to find, share, and use software built for Kubernetes. Follow these instruction:
-https://helm.sh/docs/intro/install/
+### **Step 3: Install Helm**
+Helm is the best way to find, share, and use software built for Kubernetes.
 
-After installing helm in master node, do this:
+#### Install Helm
+Follow the official Helm installation instructions: [Helm Installation Guide](https://helm.sh/docs/intro/install/)
+
+#### Add NFS Provisioner Helm Repository
+After installing Helm on the master node, add the NFS provisioner repository:
+```bash
 helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server=192.168.0.169 --set nfs.path=/var/k8-nfs/data
+```
 
+#### Install NFS Subdir External Provisioner
+Install the NFS provisioner using Helm:
+```bash
+helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+  --set nfs.server=192.168.0.169 \
+  --set nfs.path=/var/k8-nfs/data
+```
+
+### **Step 4: Create a Persistent Volume Claim**
+Use the following YAML to create a PersistentVolumeClaim:
+```yaml
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: demo-claim
-  #namespace: nfs-provisioning
+  # namespace: nfs-provisioning
 spec:
   storageClassName: nfs-client
   accessModes:
@@ -184,3 +217,9 @@ spec:
   resources:
     requests:
       storage: 1Gi
+```
+
+Apply the YAML using `kubectl apply -f`:
+```bash
+kubectl apply -f demo-claim.yaml
+```
