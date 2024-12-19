@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: name-config
+  namespace: default
+data:
+  name: Hasan Habib
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-name-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo-name
+  template:
+    metadata:
+      labels:
+        app: echo-name
+    spec:
+      containers:
+        - name: echo-name-container
+          image: alpine
+          command: ["/bin/sh", "-c", "while true; do echo \"$(NAME)\"; sleep 5; done"]
+          env:
+            - name: NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: name-config
+                  key: name
